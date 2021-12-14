@@ -1,5 +1,7 @@
 from django.shortcuts import render
 from .models import *
+from django.http import JsonResponse
+import json
 
 
 def store(request):
@@ -9,10 +11,37 @@ def store(request):
 
 
 def cart(request):
-    context = {}
+
+    if request.user.is_authenticated:
+        customer = request.user.customer
+        order, created = Order.objects.get_or_create(customer=customer, complete=False)
+        items = order.orderitem_set.all()
+    else:
+        items = []
+        order = {'get_cart_total': 0, 'get_cart_items': 0}
+
+    context = {'items': items, 'order': order}
     return render(request, 'pz/cart.html', context)
 
 
 def checkout(request):
-    context = {}
+    if request.user.is_authenticated:
+        customer = request.user.customer
+        order, created = Order.objects.get_or_create(customer=customer, complete=False)
+        items = order.orderitem_set.all()
+    else:
+        items = []
+        order = {'get_cart_total': 0, 'get_cart_items': 0}
+
+    context = {'items': items, 'order': order}
     return render(request, 'pz/checkout.html', context)
+
+
+def updateItem(request):
+    data = json.loads(request.data)
+    productId = data['productId']
+    action = data['action']
+
+    print('Action:', action)
+    print('productId:', productId)
+    return JsonResponse('Item was added', safe=False)
